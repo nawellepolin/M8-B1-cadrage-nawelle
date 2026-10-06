@@ -116,17 +116,41 @@ de réentraînement sur les retours des utilisateurs, **pas de LLM au lot 1**.
 | Prompt injection | ⚪ Sans objet au lot 1 (pas de LLM). **Devient 🟠 si un LLM est ajouté** : des conclusions adverses indexées pourraient contenir des instructions cachées (injection indirecte) | — | — |
 | Adversarial example / vol de modèle | ⚪ Aucun attaquant ne soumet d'entrée, aucun modèle entraîné sur les données du cabinet | — | — |
 
-## 5. Architecture cible et sobriété — mini-cours `05`
-_Renvoi à `schema_archi_cible.md` (Mermaid ≥ 4 composants). **LLM retenu ou
-refusé : 3 lignes.** Ce que tu écartes, et pourquoi._
+## 5. Architecture cible et sobriété
 
-## 6. Indicateurs, seuils, questions ouvertes — mini-cours `03`
-| Indicateur | Cible | Seuil d'acceptabilité | Comment on le mesure |
+Schéma détaillé : `schema_archi_cible.md`. Le projet se fait en **deux lots, hébergés
+au cabinet ou chez un hébergeur français**.
+**Lot 1** : un **moteur de recherche interne** sur les décisions du cabinet.
+L'ingestion filtre le droit de la famille, l'OCR traite les scans, l'index combine
+le texte et les filtres du registre, et chaque résultat est un lien vers l'original.
+**Lot 2** : des **modèles de courriers validés**, pré-remplis depuis le logiciel de
+gestion, puis relus et signés par l'avocat.
+
+**LLM refusé.** La cliente ne tolère aucune information invérifiable (Q7) : un moteur
+de recherche renvoie des documents réels, un LLM peut en inventer. Les courriers
+types, eux, n'ont besoin que de modèles et de champs déjà présents dans le logiciel de gestion.
+**Écartés** : RAG et base vectorielle (la recherche sémantique n'est envisagée que
+si le jeu de test montre que la recherche plein texte rate trop de décisions),
+jurisprudence publique (déjà couverte, Q12), réentraînement, statistiques par avocat.
+
+## 6. Indicateurs, seuils, questions ouvertes
+
+| Indicateur | Départ → cible | Seuil d'acceptabilité | Comment on le mesure |
 |---|---|---|---|
-| | | | |
+| Temps pour retrouver une décision | 30 min → **< 1 min** (Q9) | ≤ 3 min (le gain reste d'environ 4 h 30 par jour) | Chronométrage sur le jeu de 30 recherches réelles, puis suivi dans le journal |
+| **Rappel** : part des recherches où la bonne décision apparaît dans les 10 premiers résultats | — → **≥ 90 %** | ≥ 80 % : en dessous, les avocats reviennent à « demander au collègue ». L'erreur est récupérable, d'où un seuil souple | Jeu de test (question → décision attendue) |
+| Décision ou référence **inventée** | — → **0** | **0** : l'erreur est critique, car elle engage la responsabilité professionnelle (Q7) | Garanti par l'architecture (liens vers les originaux) ; contrôle mensuel d'un échantillon |
+| Courriers pré-remplis avec une erreur de montant ou de délai | — → **0 envoyé** ; < 2 % corrigés à la relecture | 0 courrier envoyé avec une erreur | L'avocat signale chaque correction à la relecture ; le journal compte |
+| Temps gagné par le cabinet | 0 → **5 à 6 h par jour** (objectif recalibré, §2) | ≥ 4 h par jour (le gain de la recherche seule) | (durée de référence − durée mesurée) × volumes quotidiens (Q4) |
 
-_Prochaines étapes (3) + **questions ouvertes** au client (reprises de `notes_entretien.md` §3)._
+**Prochaines étapes** :
+1. **Atelier de 2 h avec 2-3 avocats** : recueillir 30 recherches réelles (le jeu de test) et chronométrer les courriers pendant une semaine.
+2. **Préparer les données et le cadre** : audit du registre complet, comptage des scans illisibles, choix d'un hébergeur français (contrat art. 28), mise en balance RGPD documentée.
+3. **POC du lot 1** sur le recouvrement et les baux commerciaux, mesuré sur le jeu de test → décision de continuer ou d'arrêter avant le lot 2.
 
 **Questions ouvertes** :
-- **Durée actuelle d'un courrier type** (non demandée) : elle conditionne l'objectif global (§2). À mesurer sur une semaine, sur environ 20 courriers.
-- **Répartition du temps entre assistantes et avocats** : le gain « par avocat » dépend de qui prépare les courriers et de qui fait les recherches.
+- **Durée actuelle d'un courrier type** (non demandée) : elle conditionne l'objectif global (§2).
+- **Répartition du temps entre assistantes et avocats** pour les recherches et les courriers.
+- Le registre couvre-t-il toute l'archive ? L'extrait va de 2020 à 2025, alors que l'archive porte sur 15 ans. Quelle part de scans illisibles ?
+- Le logiciel de gestion permet-il un **export ou un accès par API** (débiteur, montant, échéance) ?
+- Qui valide les modèles de référence ? Où sont localisées les données Microsoft 365 ? Quel délai ?
