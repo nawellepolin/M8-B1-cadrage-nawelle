@@ -7,8 +7,12 @@
 ## 1. Synthèse exécutive (5-6 lignes — rédigée EN DERNIER)
 _Besoin réel + solution proposée (famille, pas la stack) + 2-3 indicateurs clés._
 
-> **Imprévu client (14h30) — ce que ça change** : _1-2 lignes : quelle contrainte
-> a bougé, quelles sections tu as mises à jour (données ? risques ? archi ? KPI ?)._
+> **Imprévu client (14h30) — ce que ça change** : le prestataire informatique quitte
+> le cabinet au 31/12, et **plus personne ne maintiendra le serveur**. L'outil ne doit
+> donc **rien héberger au cabinet** : il sera hébergé et maintenu chez un hébergeur
+> français, et **les décisions doivent être copiées et sauvegardées avant le 31/12**.
+> Mis à jour : §2 (contrainte), §3 (décisions), §4 (nouveau risque 🔴, droits, sécurité),
+> §5 et schéma (hébergement), §6 (étape urgente, questions).
 
 ## 2. Besoin métier et contexte
 
@@ -26,7 +30,9 @@ périmètre** (Q12). **Contraintes** : périmètre recouvrement et baux commerci
 droit de la famille exclu, jugé « trop sensible » (Q1) ; **aucune information
 invérifiable** (« tout doit être vérifiable », Q7) ; pas de cloud américain, un
 hébergeur français sous contrat est accepté (Q10) ; budget de 15 k€ puis quelques
-centaines d'euros par mois (Q8) ; un avocat relit et signe tout courrier (Q3).
+centaines d'euros par mois (Q8) ; un avocat relit et signe tout courrier (Q3) ;
+**plus de prestataire informatique après le 31/12** (imprévu), donc aucune
+maintenance possible côté cabinet.
 
 **Objectif à recalibrer.** La cliente vise « une heure par avocat et par jour » (Q9),
 soit **12 h par jour** pour le cabinet. La recherche peut en rapporter environ
@@ -42,7 +48,7 @@ mesurée la durée actuelle d'un courrier (question ouverte §6).
 
 | Donnée | Existante / à acquérir | Volume, qualité estimée | Personnelle ? |
 |---|---|---|---|
-| Décisions obtenues par le cabinet | Existante (serveur de fichiers) | Environ 2 000 sur 15 ans ; PDF, Word, et **scans anciens peu lisibles** (Q5) → OCR nécessaire, qualité 🟠 | Oui : parties, adversaires, parfois situation financière |
+| Décisions obtenues par le cabinet | Existante (serveur de fichiers, **sans maintenance après le 31/12** → copie à faire avant) | Environ 2 000 sur 15 ans ; PDF, Word, et **scans anciens peu lisibles** (Q5) → OCR nécessaire, qualité 🟠 | Oui : parties, adversaires, parfois situation financière |
 | Registre des décisions (n°, date, matière, juridiction, issue, fichier) | Existante (tenu par une assistante) | Extrait de 20 lignes ; **métadonnées déjà structurées = filtres prêts** ; qualité 🟠 (voir constats) | Non dans l'extrait |
 | Anciens courriers | Existante (dans les dossiers clients) | « Des milliers » (Q5), **non classés par type**, éparpillés sur les postes | Oui : débiteurs, montants |
 | Modèles de courriers | Existante mais **obsolète** | Dossier partagé de 2019, jamais mis à jour ; **aucun modèle de mise en demeure** disponible | Non |
@@ -99,9 +105,10 @@ L'hébergeur est un **sous-traitant** et doit signer un contrat art. 28.
 |---|---|---|---|
 | Décision ou jurisprudence **inventée** | 🔴 | Responsabilité professionnelle (Q7) | **Pas de génération** au lot 1 : chaque résultat est un **lien vers un document réel** du serveur |
 | Erreur de montant ou de délai dans un courrier | 🔴 | Responsabilité professionnelle (Q7) | Champs remplis **depuis le logiciel de gestion**, pas saisis ni générés ; relecture et signature de l'avocat obligatoires |
-| Données hors de France / cloud US | 🔴 | Secret professionnel, exigence client (Q10) | Index hébergé **sur le serveur du cabinet ou chez un hébergeur français** sous contrat art. 28 ; aucun appel à une API étrangère |
+| Données hors de France / cloud US | 🔴 | Secret professionnel, exigence client (Q10) | Outil et index hébergés **chez un hébergeur français** sous contrat art. 28 ; aucun appel à une API étrangère |
+| **Serveur du cabinet sans maintenance après le 31/12** : panne, perte de l'archive, failles non corrigées | 🔴 | Continuité du cabinet ; sécurité des dossiers (imprévu) | **Copie des décisions vers l'hébergeur avant le 31/12**, avec sauvegarde ; l'outil **ne dépend plus du serveur** |
 | Décisions de droit de la famille indexées par erreur | 🟠 | Exclusion demandée (Q1), données sensibles | **Filtre `matiere ≠ famille`** à l'indexation et contrôle d'un échantillon |
-| Accès d'un collaborateur à des dossiers qui ne le concernent pas | 🟠 | Secret professionnel, conflits d'intérêts | L'index **reprend les droits** du serveur de fichiers ; journal des consultations |
+| Accès d'un collaborateur à des dossiers qui ne le concernent pas | 🟠 | Secret professionnel, conflits d'intérêts | **Comptes nominatifs** gérés dans l'outil par un référent du cabinet (plus de droits hérités du serveur) ; journal des consultations |
 | Décision introuvable (scan illisible) | 🟠 | Fausse impression d'exhaustivité | Score de qualité OCR ; liste des documents non indexables, à re-numériser |
 | Registre erroné (juridiction, dates) | 🟡 | Filtres trompeurs | Audit du registre avant import ; recherche plein texte en complément des filtres |
 | Usage détourné du champ « issue » pour noter les avocats | 🟡 | Bascule haut risque (Annexe III 4 b) | Aucune statistique par avocat dans l'outil |
@@ -111,15 +118,16 @@ de réentraînement sur les retours des utilisateurs, **pas de LLM au lot 1**.
 
 | Menace | Plausibilité sur CE cas | Mitigation proposée | Risque résiduel |
 |---|---|---|---|
-| **Fuite / exfiltration** via le moteur (extraction massive de décisions) | 🟠 L'outil concentre 15 ans de dossiers confidentiels en un seul point de recherche | Authentification du cabinet, droits hérités, **limitation du nombre d'ouvertures et d'exports**, alerte sur volume anormal | Un collaborateur autorisé et mal intentionné |
-| **Empoisonnement de l'index** (document piégé ou mal classé déposé sur le serveur) | 🟡 Tout utilisateur du serveur peut déposer un fichier | Indexation limitée aux dossiers « décisions » ; contrôle par l'assistante qui tient le registre | Erreur de classement non repérée |
+| **Fuite / exfiltration** via le moteur (extraction massive de décisions) | 🟠 L'outil concentre 15 ans de dossiers confidentiels en un seul point de recherche | Comptes nominatifs, **limitation du nombre d'ouvertures et d'exports**, alerte sur volume anormal | Un collaborateur autorisé et mal intentionné |
+| **Empoisonnement de l'index** (document piégé ou mal classé) | 🟡 Le serveur n'est plus administré, donc ce qui s'y dépose n'est plus contrôlé | Après la copie initiale, **ajout de décisions uniquement par l'assistante** qui tient le registre | Erreur de classement non repérée |
 | Prompt injection | ⚪ Sans objet au lot 1 (pas de LLM). **Devient 🟠 si un LLM est ajouté** : des conclusions adverses indexées pourraient contenir des instructions cachées (injection indirecte) | — | — |
 | Adversarial example / vol de modèle | ⚪ Aucun attaquant ne soumet d'entrée, aucun modèle entraîné sur les données du cabinet | — | — |
 
 ## 5. Architecture cible et sobriété
 
 Schéma détaillé : `schema_archi_cible.md`. Le projet se fait en **deux lots, hébergés
-au cabinet ou chez un hébergeur français**.
+et maintenus chez un hébergeur français** : rien n'est installé sur le serveur du
+cabinet, qui ne sera plus maintenu après le 31/12. Les décisions y sont copiées une fois.
 **Lot 1** : un **moteur de recherche interne** sur les décisions du cabinet.
 L'ingestion filtre le droit de la famille, l'OCR traite les scans, l'index combine
 le texte et les filtres du registre, et chaque résultat est un lien vers l'original.
@@ -144,6 +152,7 @@ jurisprudence publique (déjà couverte, Q12), réentraînement, statistiques pa
 | Temps gagné par le cabinet | 0 → **5 à 6 h par jour** (objectif recalibré, §2) | ≥ 4 h par jour (le gain de la recherche seule) | (durée de référence − durée mesurée) × volumes quotidiens (Q4) |
 
 **Prochaines étapes** :
+0. **Urgent, avant le 31/12** : copier et sauvegarder les décisions du serveur chez l'hébergeur retenu, indépendamment du reste du projet.
 1. **Atelier de 2 h avec 2-3 avocats** : recueillir 30 recherches réelles (le jeu de test) et chronométrer les courriers pendant une semaine.
 2. **Préparer les données et le cadre** : audit du registre complet, comptage des scans illisibles, choix d'un hébergeur français (contrat art. 28), mise en balance RGPD documentée.
 3. **POC du lot 1** sur le recouvrement et les baux commerciaux, mesuré sur le jeu de test → décision de continuer ou d'arrêter avant le lot 2.
@@ -154,3 +163,4 @@ jurisprudence publique (déjà couverte, Q12), réentraînement, statistiques pa
 - Le registre couvre-t-il toute l'archive ? L'extrait va de 2020 à 2025, alors que l'archive porte sur 15 ans. Quelle part de scans illisibles ?
 - Le logiciel de gestion permet-il un **export ou un accès par API** (débiteur, montant, échéance) ?
 - Qui valide les modèles de référence ? Où sont localisées les données Microsoft 365 ? Quel délai ?
+- **Imprévu** : existe-t-il une sauvegarde à jour du serveur ? Qui sera le référent interne (comptes, droits) en attendant le nouveau prestataire ? L'hébergement infogéré reste-t-il dans « quelques centaines d'euros par mois » ?
